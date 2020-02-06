@@ -1,0 +1,34 @@
+{
+    "name": "forminator",
+    "version": "0.0.1",
+    "description": "Forminator - The only form library for React",
+    "main": "index.js",
+    "scripts": {
+        "build": "tsc",
+        "build:watch": "tsc -w"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/featurematrix/forminator.git"
+    },
+    "keywords": [
+        "forminator",
+        "react",
+        "forms",
+        "form library"
+    ],
+    "author": "Nairi Narinyan, Martin Khachatryan",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/featurematrix/forminator.git"
+    },
+    "homepage": "https://github.com/featurematrix/forminator.git",
+    "peerDependencies": {
+        "react": "^16.12.0"
+    },
+    "devDependencies": {
+        "@types/react": "^16.9.19",
+        "react": "^16.12.0",
+        "typescript": "^3.7.5"
+    }
+}
