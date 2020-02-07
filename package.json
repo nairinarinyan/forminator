@@ -1,5 +1,5 @@
 {
-    "name": "forminator",
+    "name": "react-forminator",
     "version": "0.0.1",
     "description": "Forminator - The only form library for React",
     "main": "index.js",
