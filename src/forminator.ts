@@ -11,9 +11,11 @@ export interface FormDescriptor extends Descriptor {
 }
 
 interface InternalDescriptor extends FormDescriptor {
-    fields:  {
-        [key: string]: FieldDescriptor;
-    }
+    fields: FieldsDescriptors
+}
+
+export interface FieldsDescriptors {
+    [key: string]: FieldDescriptor;
 }
 
 export interface FieldDescriptor {
@@ -57,7 +59,7 @@ export class Forminator {
                 const [key, value] = entry;
 
                 const field: FieldDescriptor = typeof value === 'string' ?
-                    { ...defaultFieldDescriptor, value } : 
+                    { ...defaultFieldDescriptor, value } :
                     { ...defaultFieldDescriptor, ...value };
 
                 return { [key]: field };
@@ -81,19 +83,19 @@ export class Forminator {
                     return { [key]: value.value};
                 })
                 .reduce((acc, curr) => ({ ...acc, ...curr }));
-    
+
             this.descriptor.onSubmit(submitData);
         } catch (err) {
             console.error(err);
         }
     }
 
-    validateField(name: string, field: FieldDescriptor) {
+    validateField(name: string, field: FieldDescriptor, fields: FieldsDescriptors) {
         const validateFns = Array.isArray(field.validate) ? field.validate : [field.validate];
 
         for (const validateFn of validateFns) {
             try {
-                validateFn(field.value);
+                validateFn(field, fields);
                 field.error = null;
                 this.informListeners(FormEvent.FIELD_ERROR, null, name)
             } catch (err) {
@@ -120,7 +122,7 @@ export class Forminator {
 
     validateForm() {
         Object.entries(this.descriptor.fields).forEach(([name, field]) => {
-            const err = this.validateField(name, field);
+            const err = this.validateField(name, field, this.descriptor.fields);
             if (err) {
                 throw new ValidationError('Invalid form');
             }
