@@ -98,13 +98,14 @@ export class Forminator {
                 validateFn(field, fields);
                 field.error = null;
                 this.informListeners(FormEvent.FIELD_ERROR, null, name)
-                return null;
             } catch (err) {
                 field.error = err;
                 this.informListeners(FormEvent.FIELD_ERROR, err, name)
                 return err;
             }
         }
+
+        return null;
     }
 
     setFieldValue(name: string, value: string) {
