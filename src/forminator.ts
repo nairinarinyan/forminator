@@ -90,7 +90,7 @@ export class Forminator {
         }
     }
 
-    validateField(name: string, field: FieldDescriptor, fields: FieldsDescriptors) {
+    validateField(name: string, field: FieldDescriptor, fields: FieldsDescriptors): ValidationError {
         const validateFns = Array.isArray(field.validate) ? field.validate : [field.validate];
 
         for (const validateFn of validateFns) {
@@ -98,6 +98,7 @@ export class Forminator {
                 validateFn(field, fields);
                 field.error = null;
                 this.informListeners(FormEvent.FIELD_ERROR, null, name)
+                return null;
             } catch (err) {
                 field.error = err;
                 this.informListeners(FormEvent.FIELD_ERROR, err, name)
@@ -121,12 +122,15 @@ export class Forminator {
     }
 
     validateForm() {
-        Object.entries(this.descriptor.fields).forEach(([name, field]) => {
-            const err = this.validateField(name, field, this.descriptor.fields);
-            if (err) {
-                throw new ValidationError('Invalid form');
-            }
-        });
+        const errors = Object.entries(this.descriptor.fields)
+            .map(([name, field]) => {
+                return this.validateField(name, field, this.descriptor.fields);
+            })
+            .filter(Boolean);
+
+        if (!!errors.length) {
+            throw new ValidationError('Invalid form', errors);
+        }
     }
 
     onFormError() {
