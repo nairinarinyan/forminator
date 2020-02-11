@@ -1,11 +1,12 @@
 {
     "name": "react-forminator",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Forminator - The only form library for React",
     "main": "index.js",
     "scripts": {
         "build": "tsc",
-        "build:watch": "tsc -w"
+        "build:watch": "tsc -w",
+        "prepublish": "npm run build"
     },
     "repository": {
         "type": "git",
