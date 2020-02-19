@@ -1,8 +1,10 @@
 import { Validator, ValidationError } from './validation';
 
 interface Descriptor {
-    onSubmit?: (values: any) => void;
+    onSubmit?: SubmitFn;
 }
+
+export type SubmitFn = (values: any) => void;
 
 export interface FormDescriptor extends Descriptor {
     fields:  {

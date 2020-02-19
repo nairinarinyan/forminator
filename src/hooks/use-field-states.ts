@@ -1,11 +1,11 @@
-import { Forminator } from './forminator';
+import { Forminator } from '../forminator';
 import { useState } from 'react';
 
 export interface FieldStates {
     [key: string]: [string, (value: string) => void];
 }
 
-export const useForm = (form: Forminator): FieldStates => {
+export const useFieldStates = (form: Forminator): FieldStates => {
     const fieldStates = Object.entries(form.descriptor.fields).map(entry => {
         const [fieldName, descriptor] = entry;
 
