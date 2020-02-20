@@ -24,7 +24,7 @@ export const Form: FunctionComponent<Props> = props => {
 
     return (
         <FormContext.Provider value={{ fieldStates, form }}>
-            <form onSubmit={onSubmit}> 
+            <form onSubmit={onSubmit} id={form.id}>
                 {children}
             </form>
         </FormContext.Provider>

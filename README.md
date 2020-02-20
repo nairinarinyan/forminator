@@ -173,3 +173,23 @@ export const CoolestForm: FunctionComponent = () => {
     );
 };
 ```
+
+## Why another form library with a similar API?
+...
+
+## Validation
+...
+
+## Some patterns
+
+### Submit form from outside
+Each form instance has a unique `id`, so you can just create button element anywhere and give the form's id to the `form` attribute of the button.  
+```tsx
+<button type="submit" form={form.id} />
+```
+
+Or if you want to submit the form programmatically, you can just
+```ts
+form.submit()
+```
+

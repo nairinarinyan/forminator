@@ -55,7 +55,15 @@ export class Forminator {
     public descriptor: InternalDescriptor;
     private _listeners: FormListener[] = [];
 
+    id: string;
+
     constructor(descriptor: FormDescriptor) {
+        const normalizedDescriptor = this.normalizeFields(descriptor);
+        this.descriptor = normalizedDescriptor;
+        this.id = `form-${Math.random() * (1000 - 100) + 100 << 0}`;
+    }
+
+    private normalizeFields(descriptor: FormDescriptor): InternalDescriptor {
         const normalizedFields = Object.entries(descriptor.fields)
             .map(entry => {
                 const [key, value] = entry;
@@ -68,12 +76,10 @@ export class Forminator {
             })
             .reduce((acc, curr) => ({ ...acc, ...curr }));
 
-        const normalizedDescriptor: InternalDescriptor = {
+        return {
             ...descriptor,
             fields: normalizedFields
-        }
-
-        this.descriptor = normalizedDescriptor;
+        };
     }
 
     submit() {
