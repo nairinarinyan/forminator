@@ -8,33 +8,35 @@ export class ValidationError {
 }
 
 // throw ValidationError if invalid
-export type Validator = (field: FieldDescriptor, fields: FieldsDescriptors) => void;
+export type Validator<K, T extends object = {}> = (field: FieldDescriptor<K, T>, fields: FieldsDescriptors<T>) => void;
 
-export const minLength = (message: string, length: number): Validator => (field: FieldDescriptor) => {
+export const minLength = (message: string, length: number): Validator<string> => (field: FieldDescriptor<string>) => {
     if (field.value.length < length) {
         throw new ValidationError(message);
     }
 }
 
-export const maxLength = (message: string, length: number): Validator => (field: FieldDescriptor) => {
+export const maxLength = (message: string, length: number): Validator<string> => (field: FieldDescriptor<string>) => {
     if (field.value.length > length) {
         throw new ValidationError(message);
     }
 }
 
-export const required = (message: string): Validator => (field: FieldDescriptor) => {
+export const required = (message: string): Validator<any> => (field: FieldDescriptor<any>) => {
     if (field.value === '' || field.value === undefined) {
         throw new ValidationError(message);
     }
 };
 
-export const same = (message: string, comparisonField: string): Validator => (field, fields) => {
-    if (fields[comparisonField].value !== field.value) {
-        throw new ValidationError(message);
-    }
-};
+export const same = <T extends object = {}>(message: string, comparisonField: keyof T): Validator<any, T> =>
+    (field: FieldDescriptor<any, T>, fields: FieldsDescriptors<T>) =>
+    {
+        if (fields[comparisonField].value !== field.value) {
+            throw new ValidationError(message);
+        }
+    };
 
-export const email = (message: string): Validator => field => {
+export const email = (message: string): Validator<any> => (field: FieldDescriptor<any>) => {
     if (!emailRegex.test(field.value)) {
         throw new ValidationError(message);
     }

@@ -1,31 +1,38 @@
 import { Validator, ValidationError } from './validation';
 
-interface Descriptor {
-    onSubmit?: SubmitFn;
+export type SubmitFn<T> = (values: T) => void;
+
+export type ErrorFn = (errors: ValidationError[]) => void;
+
+type Descriptor<T extends object> = {
+    onSubmit?: SubmitFn<T>;
+    onError?: ErrorFn;
+};
+
+type ExternalFieldDescriptor<T extends object, K> = K | FieldDescriptor<K, T>;
+
+type ExternalFieldsDescriptors<T extends object> = {
+    [key in keyof T]: ExternalFieldDescriptor<T, T[key]>
 }
 
-export type SubmitFn = (values: any) => void;
-
-export interface FormDescriptor extends Descriptor {
-    fields:  {
-        [key: string]: string | FieldDescriptor;
-    }
+export interface FormDescriptor<T extends object> extends Descriptor<T> {
+    fields: ExternalFieldsDescriptors<T>;
 }
 
-interface InternalDescriptor extends FormDescriptor {
-    fields: FieldsDescriptors
+export type FieldsDescriptors<T extends object> = {
+    [key in keyof T]: FieldDescriptor<T[key], T>;
 }
 
-export interface FieldsDescriptors {
-    [key: string]: FieldDescriptor;
+interface InternalDescriptor<T extends object> extends FormDescriptor<T> {
+    fields: FieldsDescriptors<T>;
 }
 
-export interface FieldDescriptor {
+export interface FieldDescriptor<K, T extends object = {}> {
     validateOnBlur?: boolean;
     validateOnSubmit?: boolean;
-    validate?: Validator | Validator[];
+    validate?: Validator<T> | Validator<T>[];
     resetErrorOnChange?: boolean;
-    value?: string;
+    value?: K;
     error?: ValidationError;
 }
 
@@ -42,7 +49,13 @@ export type FormListener<T = any> = {
     listener: (args: T) => void;
 }
 
-const defaultFieldDescriptor: FieldDescriptor = {
+const defaultFormDescriptor: InternalDescriptor<any> = {
+    fields: {},
+    onError: console.error,
+    onSubmit: console.log,
+};
+
+const defaultFieldDescriptor: FieldDescriptor<string> = {
     validateOnBlur: true,
     validateOnSubmit: true,
     validate: () => true,
@@ -51,32 +64,33 @@ const defaultFieldDescriptor: FieldDescriptor = {
     error: null
 };
 
-export class Forminator {
-    public descriptor: InternalDescriptor;
+export class Forminator<T extends object> {
+    public descriptor: InternalDescriptor<T>;
     private _listeners: FormListener[] = [];
 
     id: string;
 
-    constructor(descriptor: FormDescriptor) {
+    constructor(descriptor: FormDescriptor<T>) {
         const normalizedDescriptor = this.normalizeFields(descriptor);
         this.descriptor = normalizedDescriptor;
         this.id = `form-${Math.random() * (1000 - 100) + 100 << 0}`;
     }
 
-    private normalizeFields(descriptor: FormDescriptor): InternalDescriptor {
-        const normalizedFields = Object.entries(descriptor.fields)
+    private normalizeFields(descriptor: FormDescriptor<T>): InternalDescriptor<T> {
+        const normalizedFields = Object.entries<ExternalFieldDescriptor<T, any>>(descriptor.fields)
             .map(entry => {
                 const [key, value] = entry;
 
-                const field: FieldDescriptor = typeof value === 'string' ?
+                const field: FieldDescriptor<any, T> = typeof value === 'string' ?
                     { ...defaultFieldDescriptor, value } :
-                    { ...defaultFieldDescriptor, ...value };
+                    { ...defaultFieldDescriptor, ...(value as FieldDescriptor<any, T>) };
 
                 return { [key]: field };
             })
-            .reduce((acc, curr) => ({ ...acc, ...curr }));
+            .reduce<FieldsDescriptors<T>>((acc, curr) => ({ ...acc, ...curr }), {} as FieldsDescriptors<T>);
 
         return {
+            ...defaultFormDescriptor,
             ...descriptor,
             fields: normalizedFields
         };
@@ -86,19 +100,19 @@ export class Forminator {
         try {
             this.validateForm();
 
-            const submitData = Object.entries(this.descriptor.fields)
+            const submitData = Object.entries<FieldDescriptor<any, T>>(this.descriptor.fields)
                 .map(([key, value]) => {
                     return { [key]: value.value};
                 })
-                .reduce((acc, curr) => ({ ...acc, ...curr }));
+                .reduce<T>((acc, curr) => ({ ...acc, ...curr }), {} as T);
 
-            this.descriptor.onSubmit(submitData);
+            this.descriptor.onSubmit && this.descriptor.onSubmit(submitData);
         } catch (err) {
-            console.error(err);
+            this.descriptor.onError && this.descriptor.onError(err);
         }
     }
 
-    validateField(name: string, field: FieldDescriptor, fields: FieldsDescriptors): ValidationError {
+    validateField(name: string, field: FieldDescriptor<T, any>, fields: FieldsDescriptors<T>): ValidationError {
         const validateFns = Array.isArray(field.validate) ? field.validate : [field.validate];
 
         for (const validateFn of validateFns) {
@@ -116,7 +130,7 @@ export class Forminator {
         return null;
     }
 
-    setFieldValue(name: string, value: string) {
+    setFieldValue(name: keyof T, value: any) {
         this.descriptor.fields[name].value = value;
     }
 

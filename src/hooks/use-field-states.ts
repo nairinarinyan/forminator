@@ -1,16 +1,16 @@
-import { Forminator } from '../forminator';
+import { Forminator, FieldDescriptor } from '../forminator';
 import { useState } from 'react';
 
 export interface FieldStates {
     [key: string]: [string, (value: string) => void];
 }
 
-export const useFieldStates = (form: Forminator): FieldStates => {
-    const fieldStates = Object.entries(form.descriptor.fields).map(entry => {
+export const useFieldStates = <T extends object>(form: Forminator<T>): FieldStates => {
+    const fieldStates = Object.entries(form.descriptor.fields).map((entry: [string, FieldDescriptor<any>]) => {
         const [fieldName, descriptor] = entry;
 
         return {
-            [fieldName]: useState(descriptor.value)
+            [fieldName]: useState<typeof descriptor.value>(descriptor.value)
         };
     }).reduce((acc, curr) => {
         return { ...acc, ...curr };

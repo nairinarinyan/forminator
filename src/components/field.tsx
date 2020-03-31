@@ -54,7 +54,7 @@ export const Field: FunctionComponent<Props> = props => {
 
     const onBlur = (evt: FormEvent) => {
         if (field.validateOnBlur) {
-            form.validateField(name, field as FieldDescriptor, form.descriptor.fields);
+            form.validateField(name, field as FieldDescriptor<any>, form.descriptor.fields);
         }
     };
 
