@@ -15,7 +15,7 @@ type ExternalFieldsDescriptors<T extends object> = {
     [key in keyof T]: ExternalFieldDescriptor<T, T[key]>
 }
 
-export interface FormDescriptor<T extends object, A extends object> extends Descriptor<T, A> {
+export interface FormDescriptor<T extends object, A extends object = any> extends Descriptor<T, A> {
     fields: ExternalFieldsDescriptors<T>;
 }
 
