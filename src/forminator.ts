@@ -1,11 +1,11 @@
 import { Validator, ValidationError } from './validation';
 
-export type SubmitFn<T> = (values: T) => void;
+export type SubmitFn<T, A extends object> = (values: T, args: A) => void;
 
 export type ErrorFn = (errors: ValidationError[]) => void;
 
-type Descriptor<T extends object> = {
-    onSubmit?: SubmitFn<T>;
+type Descriptor<T extends object, A extends object> = {
+    onSubmit?: SubmitFn<T, A>;
     onError?: ErrorFn;
 };
 
@@ -15,7 +15,7 @@ type ExternalFieldsDescriptors<T extends object> = {
     [key in keyof T]: ExternalFieldDescriptor<T, T[key]>
 }
 
-export interface FormDescriptor<T extends object> extends Descriptor<T> {
+export interface FormDescriptor<T extends object, A extends object> extends Descriptor<T, A> {
     fields: ExternalFieldsDescriptors<T>;
 }
 
@@ -23,7 +23,7 @@ export type FieldsDescriptors<T extends object> = {
     [key in keyof T]: FieldDescriptor<T[key], T>;
 }
 
-interface InternalDescriptor<T extends object> extends FormDescriptor<T> {
+interface InternalDescriptor<T extends object, A extends object> extends FormDescriptor<T, A> {
     fields: FieldsDescriptors<T>;
 }
 
@@ -49,7 +49,7 @@ export type FormListener<T = any> = {
     listener: (args: T) => void;
 }
 
-const defaultFormDescriptor: InternalDescriptor<any> = {
+const defaultFormDescriptor: InternalDescriptor<any, any> = {
     fields: {},
     onError: console.error,
     onSubmit: console.log,
@@ -64,19 +64,19 @@ const defaultFieldDescriptor: FieldDescriptor<string> = {
     error: null
 };
 
-export class Forminator<T extends object> {
-    public descriptor: InternalDescriptor<T>;
+export class Forminator<T extends object, A extends object> {
+    public descriptor: InternalDescriptor<T, A>;
     private _listeners: FormListener[] = [];
 
     id: string;
 
-    constructor(descriptor: FormDescriptor<T>) {
+    constructor(descriptor: FormDescriptor<T, A>) {
         const normalizedDescriptor = this.normalizeFields(descriptor);
         this.descriptor = normalizedDescriptor;
         this.id = `form-${Math.random() * (1000 - 100) + 100 << 0}`;
     }
 
-    private normalizeFields(descriptor: FormDescriptor<T>): InternalDescriptor<T> {
+    private normalizeFields(descriptor: FormDescriptor<T, A>): InternalDescriptor<T, A> {
         const normalizedFields = Object.entries<ExternalFieldDescriptor<T, any>>(descriptor.fields)
             .map(entry => {
                 const [key, value] = entry;
@@ -96,7 +96,7 @@ export class Forminator<T extends object> {
         };
     }
 
-    submit() {
+    submit(args?: A) {
         try {
             this.validateForm();
 
@@ -106,7 +106,7 @@ export class Forminator<T extends object> {
                 })
                 .reduce<T>((acc, curr) => ({ ...acc, ...curr }), {} as T);
 
-            this.descriptor.onSubmit && this.descriptor.onSubmit(submitData);
+            this.descriptor.onSubmit && this.descriptor.onSubmit(submitData, args);
         } catch (err) {
             this.descriptor.onError && this.descriptor.onError(err);
         }

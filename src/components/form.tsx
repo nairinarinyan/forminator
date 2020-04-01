@@ -3,15 +3,15 @@ import { Forminator } from '../forminator';
 import { FieldStates, useFieldStates } from '../hooks/use-field-states';
 
 interface Props {
-    form: Forminator<any>;
+    form: Forminator<any, any>;
 }
 
-interface FormContext<T extends object> {
+interface FormContext<T extends object, A extends object> {
     fieldStates: FieldStates;
-    form: Forminator<T>;
+    form: Forminator<T, A>;
 }
 
-export const FormContext = createContext<FormContext<any>>(null);
+export const FormContext = createContext<FormContext<any, any>>(null);
 
 export const Form: FunctionComponent<Props> = props => {
     const { form, children } = props;

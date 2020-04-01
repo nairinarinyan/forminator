@@ -3,7 +3,7 @@ import { FormContext } from './form';
 import { FieldDescriptor } from '../forminator';
 import { ValidationError } from '../validation';
 
-type FieldContext = {
+type FieldCtx = {
     name: string;
     value: string;
     setValue: (value: string) => void;
@@ -24,7 +24,7 @@ type Props = {
     children?: ReactNode | CallableChild;
 }
 
-export const FieldContext = createContext<FieldContext>(null);
+export const FieldContext = createContext<FieldCtx>(null);
 
 export const Field: FunctionComponent<Props> = props => {
     const { fieldStates, form } = useContext(FormContext);
