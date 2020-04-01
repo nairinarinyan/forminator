@@ -40,6 +40,10 @@ export const Field: FunctionComponent<Props> = props => {
         form.onFieldError(name, error => {
             setHasError(error);
         });
+
+        form.onFieldUpdate(name, value => {
+            _setValue(value);
+        });
     }, [name]);
 
     const setValue = (value: string) => {

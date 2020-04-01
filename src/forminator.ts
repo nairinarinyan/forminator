@@ -45,7 +45,7 @@ export enum FormEvent {
 
 export type FormListener<T = any> = {
     event: FormEvent,
-    fieldName?: string,
+    fieldName?: keyof T,
     listener: (args: T) => void;
 }
 
@@ -100,7 +100,7 @@ export class Forminator<T extends object, A extends object> {
         try {
             this.validateForm();
 
-            const submitData = Object.entries<FieldDescriptor<any, T>>(this.descriptor.fields)
+            const submitData = this.fields
                 .map(([key, value]) => {
                     return { [key]: value.value};
                 })
@@ -112,7 +112,7 @@ export class Forminator<T extends object, A extends object> {
         }
     }
 
-    validateField(name: string, field: FieldDescriptor<T, any>, fields: FieldsDescriptors<T>): ValidationError {
+    validateField(name: keyof T, field: FieldDescriptor<T, any>, fields: FieldsDescriptors<T>): ValidationError {
         const validateFns = Array.isArray(field.validate) ? field.validate : [field.validate];
 
         for (const validateFn of validateFns) {
@@ -132,9 +132,22 @@ export class Forminator<T extends object, A extends object> {
 
     setFieldValue(name: keyof T, value: any) {
         this.descriptor.fields[name].value = value;
+        this.informListeners(FormEvent.FIELD_UPDATE, value, name);
     }
 
-    onFieldError(name: string, listenerFn: (error: ValidationError) => void) {
+    setFieldValues(values: Partial<T>, merge?: boolean) {
+        this.fields.forEach(([key]) => {
+            if (!values.hasOwnProperty(key)) {
+                if (merge) return;
+
+                this.setFieldValue(key, undefined);
+            }
+
+            this.setFieldValue(key, values[key]);
+        });
+    }
+
+    onFieldError(name: keyof T, listenerFn: (error: ValidationError) => void) {
         const listener: FormListener = {
             event: FormEvent.FIELD_ERROR,
             fieldName: name,
@@ -144,10 +157,20 @@ export class Forminator<T extends object, A extends object> {
         this._listeners.push(listener);
     }
 
+    onFieldUpdate(name: keyof T, listenerFn: (value: any) => void) {
+        const listener: FormListener = {
+            event: FormEvent.FIELD_UPDATE,
+            fieldName: name,
+            listener: listenerFn
+        };
+
+        this._listeners.push(listener);
+    }
+
     validateForm() {
-        const errors = Object.entries(this.descriptor.fields)
+        const errors = this.fields
             .map(([name, field]) => {
-                return this.validateField(name, field, this.descriptor.fields);
+                return this.validateField(name as keyof T, field, this.descriptor.fields);
             })
             .filter(Boolean);
 
@@ -160,7 +183,11 @@ export class Forminator<T extends object, A extends object> {
 
     }
 
-    private informListeners(evt: FormEvent, args: any, fieldName?: string) {
+    private get fields() {
+        return Object.entries(this.descriptor.fields) as [keyof T, FieldDescriptor<any, T>][];
+    }
+
+    private informListeners(evt: FormEvent, args: any, fieldName?: keyof T) {
         this._listeners
             .filter(l => {
                 return l.event === evt && (l.fieldName ? l.fieldName === fieldName : true);
