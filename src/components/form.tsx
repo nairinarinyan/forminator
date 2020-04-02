@@ -7,7 +7,7 @@ interface Props {
 }
 
 interface FormContext<T extends object, A extends object> {
-    fieldStates: FieldStates;
+    fieldStates: FieldStates<T>;
     form: Forminator<T, A>;
 }
 

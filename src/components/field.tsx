@@ -34,9 +34,14 @@ export const Field: FunctionComponent<Props> = props => {
     const field = form.descriptor.fields[name];
 
     const childIsFunction = typeof children === 'function';
-    const [value, _setValue] = fieldStates[name];
+    const validField = fieldStates.hasOwnProperty(name);
+    const [value, _setValue] = fieldStates[name] || ['', () => {}];
 
     useEffect(() => {
+        if (!validField) {
+            return console.error(`${name} is not a valid field name`);
+        }
+
         form.onFieldError(name, error => {
             setHasError(error);
         });
@@ -44,7 +49,9 @@ export const Field: FunctionComponent<Props> = props => {
         form.onFieldUpdate(name, value => {
             _setValue(value);
         });
-    }, [name]);
+    }, [name, validField]);
+
+    if (!validField) return null;
 
     const setValue = (value: string) => {
         form.setFieldValue(name, value);

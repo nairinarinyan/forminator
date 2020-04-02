@@ -30,7 +30,7 @@ interface InternalDescriptor<T extends object, A extends object> extends FormDes
 export interface FieldDescriptor<K, T extends object = {}> {
     validateOnBlur?: boolean;
     validateOnSubmit?: boolean;
-    validate?: Validator<T> | Validator<T>[];
+    validate?: Validator<K, T> | Validator<K, T>[];
     resetErrorOnChange?: boolean;
     value?: K;
     error?: ValidationError;
@@ -71,9 +71,12 @@ export class Forminator<T extends object, A extends object> {
     id: string;
 
     constructor(descriptor: FormDescriptor<T, A>) {
-        const normalizedDescriptor = this.normalizeFields(descriptor);
-        this.descriptor = normalizedDescriptor;
         this.id = `form-${Math.random() * (1000 - 100) + 100 << 0}`;
+        this.initDescriptor(descriptor);
+    }
+
+    private initDescriptor(descriptor: FormDescriptor<T, A>) {
+        this.descriptor = this.normalizeFields(descriptor);
     }
 
     private normalizeFields(descriptor: FormDescriptor<T, A>): InternalDescriptor<T, A> {
@@ -96,38 +99,16 @@ export class Forminator<T extends object, A extends object> {
         };
     }
 
-    submit(args?: A) {
-        try {
-            this.validateForm();
-
-            const submitData = this.fields
-                .map(([key, value]) => {
-                    return { [key]: value.value};
-                })
-                .reduce<T>((acc, curr) => ({ ...acc, ...curr }), {} as T);
-
-            this.descriptor.onSubmit && this.descriptor.onSubmit(submitData, args);
-        } catch (err) {
-            this.descriptor.onError && this.descriptor.onError(err);
-        }
+    private informListeners(evt: FormEvent, args: any, fieldName?: keyof T) {
+        this._listeners
+            .filter(l => {
+                return l.event === evt && (l.fieldName ? l.fieldName === fieldName : true);
+            })
+            .forEach(l => l.listener(args))
     }
 
-    validateField(name: keyof T, field: FieldDescriptor<T, any>, fields: FieldsDescriptors<T>): ValidationError {
-        const validateFns = Array.isArray(field.validate) ? field.validate : [field.validate];
-
-        for (const validateFn of validateFns) {
-            try {
-                validateFn(field, fields);
-                field.error = null;
-                this.informListeners(FormEvent.FIELD_ERROR, null, name)
-            } catch (err) {
-                field.error = err;
-                this.informListeners(FormEvent.FIELD_ERROR, err, name)
-                return err;
-            }
-        }
-
-        return null;
+    get fields() {
+        return Object.entries(this.descriptor.fields) as [keyof T, FieldDescriptor<unknown, T>][];
     }
 
     setFieldValue(name: keyof T, value: any) {
@@ -147,24 +128,42 @@ export class Forminator<T extends object, A extends object> {
         });
     }
 
-    onFieldError(name: keyof T, listenerFn: (error: ValidationError) => void) {
-        const listener: FormListener = {
-            event: FormEvent.FIELD_ERROR,
-            fieldName: name,
-            listener: listenerFn
-        };
-
-        this._listeners.push(listener);
+    getFieldValue(fieldName: keyof T) {
+        return this.descriptor.fields[fieldName].value;
     }
 
-    onFieldUpdate(name: keyof T, listenerFn: (value: any) => void) {
-        const listener: FormListener = {
-            event: FormEvent.FIELD_UPDATE,
-            fieldName: name,
-            listener: listenerFn
-        };
+    submit(args?: A) {
+        try {
+            this.validateForm();
 
-        this._listeners.push(listener);
+            const submitData = this.fields
+                .map(([key, value]) => {
+                    return { [key]: value.value};
+                })
+                .reduce<T>((acc, curr) => ({ ...acc, ...curr }), {} as T);
+
+            this.descriptor.onSubmit && this.descriptor.onSubmit(submitData, args);
+        } catch (err) {
+            this.descriptor.onError && this.descriptor.onError(err);
+        }
+    }
+
+    validateField(name: keyof T, field: FieldDescriptor<unknown, T>, fields: FieldsDescriptors<T>): ValidationError {
+        const validateFns = Array.isArray(field.validate) ? field.validate : [field.validate];
+
+        for (const validateFn of validateFns) {
+            try {
+                validateFn(field, fields);
+                field.error = null;
+                this.informListeners(FormEvent.FIELD_ERROR, null, name)
+            } catch (err) {
+                field.error = err;
+                this.informListeners(FormEvent.FIELD_ERROR, err, name)
+                return err;
+            }
+        }
+
+        return null;
     }
 
     validateForm() {
@@ -179,19 +178,24 @@ export class Forminator<T extends object, A extends object> {
         }
     }
 
-    onFormError() {
+    // hooks
+    onFieldUpdate(name: keyof T, listenerFn: (value: any) => void) {
+        const listener: FormListener = {
+            event: FormEvent.FIELD_UPDATE,
+            fieldName: name,
+            listener: listenerFn
+        };
 
+        this._listeners.push(listener);
     }
 
-    private get fields() {
-        return Object.entries(this.descriptor.fields) as [keyof T, FieldDescriptor<any, T>][];
-    }
+    onFieldError(name: keyof T, listenerFn: (error: ValidationError) => void) {
+        const listener: FormListener = {
+            event: FormEvent.FIELD_ERROR,
+            fieldName: name,
+            listener: listenerFn
+        };
 
-    private informListeners(evt: FormEvent, args: any, fieldName?: keyof T) {
-        this._listeners
-            .filter(l => {
-                return l.event === evt && (l.fieldName ? l.fieldName === fieldName : true);
-            })
-            .forEach(l => l.listener(args))
+        this._listeners.push(listener);
     }
 }
