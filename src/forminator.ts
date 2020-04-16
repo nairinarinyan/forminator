@@ -83,8 +83,10 @@ export class Forminator<T extends object, A extends object> {
         const normalizedFields = Object.entries<ExternalFieldDescriptor<T, any>>(descriptor.fields)
             .map(entry => {
                 const [key, value] = entry;
+                const isString = typeof value === 'string';
+                const isArray = Array.isArray(value);
 
-                const field: FieldDescriptor<any, T> = typeof value === 'string' ?
+                const field: FieldDescriptor<any, T> = (isString || isArray) ?
                     { ...defaultFieldDescriptor, value } :
                     { ...defaultFieldDescriptor, ...(value as FieldDescriptor<any, T>) };
 
@@ -109,6 +111,22 @@ export class Forminator<T extends object, A extends object> {
 
     get fields() {
         return Object.entries(this.descriptor.fields) as [keyof T, FieldDescriptor<unknown, T>][];
+    }
+
+    addFieldToArray(name: keyof T, value?: any) {
+        const field = this.descriptor.fields[name];
+        const currentValue = (<unknown>field.value as any[]);
+
+        const valueToSet = typeof value === 'undefined' ? '' : value;
+        (<unknown>field.value as any[]) = currentValue.concat(valueToSet);
+
+        this.informListeners(FormEvent.FIELD_UPDATE, field.value, name);
+    }
+
+    setFieldArrayValue(name: keyof T, index: number, value: any) {
+        const field = this.descriptor.fields[name];
+        (<unknown>field.value as any[])[index] = value;
+        this.informListeners(FormEvent.FIELD_UPDATE, field.value, name);
     }
 
     setFieldValue(name: keyof T, value: any) {
@@ -153,7 +171,25 @@ export class Forminator<T extends object, A extends object> {
 
         for (const validateFn of validateFns) {
             try {
-                validateFn(field, fields);
+                const isArray = Array.isArray(field.value);
+
+                if (isArray) {
+                    const errors = (field.value as unknown[]).map(value => {
+                        try {
+                            validateFn({ ...field, value }, fields);
+                            return null;
+                        } catch (err) {
+                            return err as ValidationError;
+                        }
+                    });
+
+                    if (errors.filter(Boolean).length) {
+                        throw new ValidationError('', errors);
+                    }
+                } else {
+                    validateFn(field, fields);
+                }
+
                 field.error = null;
                 this.informListeners(FormEvent.FIELD_ERROR, null, name)
             } catch (err) {

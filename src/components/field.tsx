@@ -2,6 +2,7 @@ import React, { createContext, FunctionComponent, ReactNode, useContext, FormEve
 import { FormContext } from './form';
 import { FieldDescriptor } from '../forminator';
 import { ValidationError } from '../validation';
+import { ValuePair } from '../hooks/use-field-states';
 
 type FieldCtx = {
     name: string;
@@ -11,13 +12,14 @@ type FieldCtx = {
     error?: ValidationError;
 };
 
-type CallableChild = (
+type CallableChildProps = {
     value: string,
     setValue: (val: string) => void,
     onBlur?: (evt: FormEvent) => void,
     error?: ValidationError
-) => ReactNode;
+}
 
+type CallableChild = (props: CallableChildProps) => ReactNode;
 
 type Props = {
     name: string;
@@ -34,14 +36,16 @@ export const Field: FunctionComponent<Props> = props => {
     const field = form.descriptor.fields[name];
 
     const childIsFunction = typeof children === 'function';
-    const validField = fieldStates.hasOwnProperty(name);
-    const [value, _setValue] = fieldStates[name] || ['', () => {}];
+    const valuePair = fieldStates[name] as ValuePair<string>;
+
+    if (!valuePair) {
+        console.error(`${name} is not a valid field name`);
+        return null;
+    }
+
+    const [value, _setValue] = valuePair;
 
     useEffect(() => {
-        if (!validField) {
-            return console.error(`${name} is not a valid field name`);
-        }
-
         form.onFieldError(name, error => {
             setHasError(error);
         });
@@ -49,9 +53,7 @@ export const Field: FunctionComponent<Props> = props => {
         form.onFieldUpdate(name, value => {
             _setValue(value);
         });
-    }, [name, validField]);
-
-    if (!validField) return null;
+    }, [name]);
 
     const setValue = (value: string) => {
         form.setFieldValue(name, value);
@@ -72,7 +74,7 @@ export const Field: FunctionComponent<Props> = props => {
     return (
         <FieldContext.Provider value={{ name, value, setValue, onBlur, error }}>
             {childIsFunction ?
-                (children as CallableChild)(value, setValue, onBlur, error) :
+                (children as CallableChild)({ value, setValue, onBlur, error }) :
                 children
             }
         </FieldContext.Provider>
