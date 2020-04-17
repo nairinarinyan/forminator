@@ -1,6 +1,6 @@
 {
     "name": "react-forminator",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "Forminator - The only form library for React",
     "main": "index.js",
     "scripts": {

@@ -30,10 +30,13 @@ interface InternalDescriptor<T extends object, A extends object> extends FormDes
 export interface FieldDescriptor<K, T extends object = {}> {
     validateOnBlur?: boolean;
     validateOnSubmit?: boolean;
+    validateOnChange?: boolean,
     validate?: Validator<K, T> | Validator<K, T>[];
     resetErrorOnChange?: boolean;
     value?: K;
     error?: ValidationError;
+    onChange?: (input: any) => K;
+    onRender?: (value: K) => any;
 }
 
 export enum FormEvent {
@@ -58,6 +61,7 @@ const defaultFormDescriptor: InternalDescriptor<any, any> = {
 const defaultFieldDescriptor: FieldDescriptor<string> = {
     validateOnBlur: true,
     validateOnSubmit: true,
+    validateOnChange: false,
     validate: () => true,
     resetErrorOnChange: true,
     value: '',
@@ -109,8 +113,27 @@ export class Forminator<T extends object, A extends object> {
             .forEach(l => l.listener(args))
     }
 
+    private informUpdate<K>(name: keyof T, field: FieldDescriptor<K, T>) {
+        const { value, onRender } = field;
+
+        this.informListeners(
+            FormEvent.FIELD_UPDATE,
+            onRender ? onRender(value) : value,
+            name
+        );
+    }
+
     get fields() {
         return Object.entries(this.descriptor.fields) as [keyof T, FieldDescriptor<unknown, T>][];
+    }
+
+    removeFieldFromArray(name: keyof T, idx: number) {
+        const field = this.descriptor.fields[name];
+        const currentValue = (<unknown>field.value as any[]).slice();
+        currentValue.splice(idx, 1);
+
+        (<unknown>field.value as any[]) = currentValue;
+        this.informUpdate(name, field);
     }
 
     addFieldToArray(name: keyof T, value?: any) {
@@ -120,18 +143,29 @@ export class Forminator<T extends object, A extends object> {
         const valueToSet = typeof value === 'undefined' ? '' : value;
         (<unknown>field.value as any[]) = currentValue.concat(valueToSet);
 
-        this.informListeners(FormEvent.FIELD_UPDATE, field.value, name);
+        this.informUpdate(name, field);
     }
 
     setFieldArrayValue(name: keyof T, index: number, value: any) {
         const field = this.descriptor.fields[name];
         (<unknown>field.value as any[])[index] = value;
-        this.informListeners(FormEvent.FIELD_UPDATE, field.value, name);
+        this.informUpdate(name, field);
+
+        if (field.validateOnChange) {
+            this.validateField(name, field as FieldDescriptor<unknown, T>, this.descriptor.fields);
+        }
     }
 
     setFieldValue(name: keyof T, value: any) {
-        this.descriptor.fields[name].value = value;
-        this.informListeners(FormEvent.FIELD_UPDATE, value, name);
+        const field = this.descriptor.fields[name];
+        const { onChange } = field;
+
+        field.value = onChange ? onChange(value) : value;
+        this.informUpdate(name, field);
+
+        if (field.validateOnChange) {
+            this.validateField(name, field as FieldDescriptor<unknown, T>, this.descriptor.fields);
+        }
     }
 
     setFieldValues(values: Partial<T>, merge?: boolean) {
@@ -168,11 +202,10 @@ export class Forminator<T extends object, A extends object> {
 
     validateField(name: keyof T, field: FieldDescriptor<unknown, T>, fields: FieldsDescriptors<T>): ValidationError {
         const validateFns = Array.isArray(field.validate) ? field.validate : [field.validate];
+        const isArray = Array.isArray(field.value);
 
-        for (const validateFn of validateFns) {
-            try {
-                const isArray = Array.isArray(field.value);
-
+        try {
+            for (const validateFn of validateFns) {
                 if (isArray) {
                     const errors = (field.value as unknown[]).map(value => {
                         try {
@@ -189,14 +222,14 @@ export class Forminator<T extends object, A extends object> {
                 } else {
                     validateFn(field, fields);
                 }
-
-                field.error = null;
-                this.informListeners(FormEvent.FIELD_ERROR, null, name)
-            } catch (err) {
-                field.error = err;
-                this.informListeners(FormEvent.FIELD_ERROR, err, name)
-                return err;
             }
+
+            field.error = null;
+            this.informListeners(FormEvent.FIELD_ERROR, null, name)
+        } catch (err) {
+            field.error = err;
+            this.informListeners(FormEvent.FIELD_ERROR, err, name)
+            return err;
         }
 
         return null;

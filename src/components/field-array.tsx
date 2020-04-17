@@ -1,4 +1,4 @@
-import React, { createContext, FunctionComponent, ReactNode, useContext, FormEvent, useEffect, useState } from 'react';
+import React, { createContext, FunctionComponent, ReactNode, useContext, FormEvent, useEffect, useState, useLayoutEffect } from 'react';
 import { FormContext } from './form';
 import { FieldDescriptor } from '../forminator';
 import { ValidationError } from '../validation';
@@ -44,21 +44,17 @@ export const FieldArray: FunctionComponent<Props> = props => {
         return null;
     }
 
-    const [values, _setValues] = valuePair;
+    const [values, setValues] = valuePair;
 
-    // const [value, _setValue] = valuePairs;
-    // const [values, _setValue] = fieldStates[name] || [[''], () => {}];
-
-    useEffect(() => {
-        form.onFieldError(name, error => {
-            setErrors(error.errors || []);
-            // setHasError(error);
-        });
-
+    useLayoutEffect(() => {
         form.onFieldUpdate(name, values => {
-            _setValues(values);
+            setValues(values);
         });
-    }, [name]);
+
+        form.onFieldError(name, error => {
+            setErrors(error ? error.errors : []);
+        });
+    }, []);
 
     const setValue = (idx: number, value: string) => {
         form.setFieldArrayValue(name, idx, value);
@@ -67,14 +63,7 @@ export const FieldArray: FunctionComponent<Props> = props => {
             const errorsToSet = errors.slice()
             errorsToSet[idx] = null;
             setErrors(errorsToSet);
-
-            // setErrors
-            // setHasError(null);
         }
-
-        const valuesToSet = values.slice()
-        valuesToSet[idx] = value;
-        _setValues(valuesToSet);
     };
 
     const onBlur = (evt: FormEvent) => {
@@ -82,8 +71,6 @@ export const FieldArray: FunctionComponent<Props> = props => {
             form.validateField(name, field as FieldDescriptor<any>, form.descriptor.fields);
         }
     };
-
-    // const errors = error ? error.errors : [];
 
     return (
         <FieldArrayContext.Provider value={{ name, values, setValue, onBlur, errors }}>
