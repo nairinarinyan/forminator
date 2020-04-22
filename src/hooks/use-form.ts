@@ -13,7 +13,9 @@ export const useForm = <T extends object, A extends object = any>(
     }, [onSubmit]);
 
     const form = useMemo(() => {
-        return new Forminator({ ...descriptor, onSubmit: (v, args: A) => onSubmitRef.current(v, args), onError });
+        return new Forminator({ ...descriptor, onSubmit: (v, args: A) => {
+            onSubmitRef.current && onSubmitRef.current(v, args)
+        }, onError });
     }, [descriptor]);
 
     return form;

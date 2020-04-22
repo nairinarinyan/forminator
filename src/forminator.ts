@@ -35,6 +35,7 @@ export interface FieldDescriptor<K, T extends object = {}> {
     resetErrorOnChange?: boolean;
     value?: K;
     error?: ValidationError;
+    isFieldArray?: boolean;
     onChange?: (input: any) => K;
     onRender?: (value: K) => any;
 }
@@ -55,7 +56,6 @@ export type FormListener<T = any> = {
 const defaultFormDescriptor: InternalDescriptor<any, any> = {
     fields: {},
     onError: console.error,
-    onSubmit: console.log,
 };
 
 const defaultFieldDescriptor: FieldDescriptor<string> = {
@@ -64,11 +64,12 @@ const defaultFieldDescriptor: FieldDescriptor<string> = {
     validateOnChange: false,
     validate: () => true,
     resetErrorOnChange: true,
+    isFieldArray: false,
     value: '',
     error: null
 };
 
-export class Forminator<T extends object, A extends object> {
+export class Forminator<T extends object, A extends object = any> {
     public descriptor: InternalDescriptor<T, A>;
     private _listeners: FormListener[] = [];
 
@@ -87,12 +88,11 @@ export class Forminator<T extends object, A extends object> {
         const normalizedFields = Object.entries<ExternalFieldDescriptor<T, any>>(descriptor.fields)
             .map(entry => {
                 const [key, value] = entry;
-                const isString = typeof value === 'string';
-                const isArray = Array.isArray(value);
+                const isDescriptorLike = typeof value === 'object' && value !== null && 'value' in value;
 
-                const field: FieldDescriptor<any, T> = (isString || isArray) ?
-                    { ...defaultFieldDescriptor, value } :
-                    { ...defaultFieldDescriptor, ...(value as FieldDescriptor<any, T>) };
+                const field: FieldDescriptor<any, T> = isDescriptorLike ?
+                    { ...defaultFieldDescriptor, ...(value as FieldDescriptor<any, T>) } :
+                    { ...defaultFieldDescriptor, value };
 
                 return { [key]: field };
             })
@@ -184,7 +184,7 @@ export class Forminator<T extends object, A extends object> {
         return this.descriptor.fields[fieldName].value;
     }
 
-    submit(args?: A) {
+    submit(args?: A): T {
         try {
             this.validateForm();
 
@@ -195,6 +195,7 @@ export class Forminator<T extends object, A extends object> {
                 .reduce<T>((acc, curr) => ({ ...acc, ...curr }), {} as T);
 
             this.descriptor.onSubmit && this.descriptor.onSubmit(submitData, args);
+            return submitData;
         } catch (err) {
             this.descriptor.onError && this.descriptor.onError(err);
         }
@@ -202,11 +203,10 @@ export class Forminator<T extends object, A extends object> {
 
     validateField(name: keyof T, field: FieldDescriptor<unknown, T>, fields: FieldsDescriptors<T>): ValidationError {
         const validateFns = Array.isArray(field.validate) ? field.validate : [field.validate];
-        const isArray = Array.isArray(field.value);
 
         try {
             for (const validateFn of validateFns) {
-                if (isArray) {
+                if (field.isFieldArray) {
                     const errors = (field.value as unknown[]).map(value => {
                         try {
                             validateFn({ ...field, value }, fields);

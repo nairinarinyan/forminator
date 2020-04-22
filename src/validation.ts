@@ -36,8 +36,18 @@ export const same = <T extends object = {}>(message: string, comparisonField: ke
         }
     };
 
-export const email = (message: string): Validator<any> => (field: FieldDescriptor<any>) => {
+export const email = (message: string): Validator<string> => (field: FieldDescriptor<string>) => {
     if (!emailRegex.test(field.value)) {
         throw new ValidationError(message);
     }
 };
+
+export const notEmpty = (message: string): Validator<any[]> => (field: FieldDescriptor<any[]>) => {
+    const cleanedUp = field.value.filter(v => {
+        return typeof v !== 'undefined' && v !== null;
+    });
+
+    if (!cleanedUp.length) {
+        throw new ValidationError(message);
+    }
+}
