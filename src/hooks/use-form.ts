@@ -1,5 +1,5 @@
 import { FormDescriptor, Forminator, SubmitFn, ErrorFn } from '../forminator';
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 
 export const useForm = <T extends object, A extends object = any>(
     descriptor: FormDescriptor<T, A>,
@@ -7,6 +7,8 @@ export const useForm = <T extends object, A extends object = any>(
     onError?: ErrorFn
 ): Forminator<T, A> => {
     const onSubmitRef = useRef<SubmitFn<T, A>>(onSubmit);
+    const [, updateState] = useState();
+    const forceUpdate = useCallback(() => updateState({}), []);
 
     useEffect(() => {
         onSubmitRef.current = onSubmit;
@@ -17,6 +19,10 @@ export const useForm = <T extends object, A extends object = any>(
             onSubmitRef.current && onSubmitRef.current(v, args)
         }, onError });
     }, [descriptor]);
+
+    useEffect(() => {
+        form.onFormError(forceUpdate);
+    }, [])
 
     return form;
 };

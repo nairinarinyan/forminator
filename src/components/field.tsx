@@ -57,10 +57,6 @@ export const Field: FunctionComponent<Props> = props => {
 
     const setValue = (value: string) => {
         form.setFieldValue(name, value);
-
-        if (field.resetErrorOnChange) {
-            setHasError(null);
-        }
     };
 
     const onBlur = (evt: FormEvent) => {

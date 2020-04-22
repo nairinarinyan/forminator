@@ -10,6 +10,9 @@ export class ValidationError {
 // throw ValidationError if invalid
 export type Validator<K, T extends object = {}> = (field: FieldDescriptor<K, T>, fields: FieldsDescriptors<T>) => void;
 
+// throw ValidationError if invalid
+export type FormValidator<T extends object = {}> = (fields: FieldsDescriptors<T>) => void;
+
 export const minLength = (message: string, length: number): Validator<string> => (field: FieldDescriptor<string>) => {
     if (field.value.length < length) {
         throw new ValidationError(message);

@@ -58,12 +58,6 @@ export const FieldArray: FunctionComponent<Props> = props => {
 
     const setValue = (idx: number, value: string) => {
         form.setFieldArrayValue(name, idx, value);
-
-        if (field.resetErrorOnChange) {
-            const errorsToSet = errors.slice()
-            errorsToSet[idx] = null;
-            setErrors(errorsToSet);
-        }
     };
 
     const onBlur = (evt: FormEvent) => {

@@ -1,5 +1,9 @@
 export * from './forminator';
+
 export * from './hooks/use-form';
+export * from './hooks/use-form-error';
+export * from './hooks/use-field';
+
 export * from './validation';
 
 export * from './components/form';
