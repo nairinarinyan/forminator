@@ -16,7 +16,7 @@ type Descriptor<T extends object, A extends object> = {
 type ExternalFieldDescriptor<T extends object, K> = K | FieldDescriptor<K, T>;
 
 type ExternalFieldsDescriptors<T extends object> = {
-    [key in keyof T]: ExternalFieldDescriptor<T, T[key]>
+    [key in keyof T]: ExternalFieldDescriptor<T, any>
 }
 
 export interface FormDescriptor<T extends object, A extends object = any> extends Descriptor<T, A> {
@@ -24,7 +24,7 @@ export interface FormDescriptor<T extends object, A extends object = any> extend
 }
 
 export type FieldsDescriptors<T extends object> = {
-    [key in keyof T]: FieldDescriptor<T[key], T>;
+    [key in keyof T]: FieldDescriptor<any, T>;
 }
 
 interface InternalDescriptor<T extends object, A extends object> extends FormDescriptor<T, A> {
@@ -236,6 +236,10 @@ export class Forminator<T extends object, A extends object = any> {
 
             this.setFieldValue(key, values[key]);
         });
+    }
+
+    setFieldValidators<K>(fieldName: keyof T, validate: Validator<K, T> | Validator<K, T>[]) {
+        this.descriptor.fields[fieldName].validate = validate;
     }
 
     getFieldValue(fieldName: keyof T) {
