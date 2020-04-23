@@ -56,6 +56,7 @@ export const Field: FunctionComponent<Props> = props => {
     }, [name]);
 
     const setValue = (value: string) => {
+        _setValue(value);
         form.setFieldValue(name, value);
     };
 
