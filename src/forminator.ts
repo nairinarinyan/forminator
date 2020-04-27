@@ -110,10 +110,12 @@ export class Forminator<T extends object, A extends object = any> {
             .map(entry => {
                 const [key, value] = entry;
                 const isDescriptorLike = typeof value === 'object' && value !== null && 'value' in value;
+                const valueAsDescriptor = value as FieldDescriptor<any, T>;
+                const isArray = Array.isArray(isDescriptorLike ? valueAsDescriptor.value : value);
 
                 const field: FieldDescriptor<any, T> = isDescriptorLike ?
-                    { ...defaultFieldDescriptor, ...(value as FieldDescriptor<any, T>) } :
-                    { ...defaultFieldDescriptor, value };
+                    { ...defaultFieldDescriptor, ...valueAsDescriptor, value: isArray ? valueAsDescriptor.value.slice() : valueAsDescriptor.value } :
+                    { ...defaultFieldDescriptor, value: isArray ? value.slice() : value };
 
                 return { [key]: field };
             })
