@@ -1,4 +1,5 @@
 import { Validator, ValidationError, FormValidator } from './validation';
+import { clone } from './helpers';
 
 export type SubmitFn<T, A extends object> = (values: T, args: A) => void;
 
@@ -47,6 +48,7 @@ export interface FieldDescriptor<K, T extends object = {}> {
 export enum FormEvent {
     FIELD_UPDATE,
     FIELD_ERROR,
+    FIELD_ERRORS,
     FORM_ERROR,
     FORM_SUBMIT,
 }
@@ -62,7 +64,7 @@ export type ErrorListenerOptions = {
 export type FormListener<T = any, A extends (UpdateListenerOptions | ErrorListenerOptions) = any> = {
     event: FormEvent,
     fieldName?: keyof T,
-    listener: (args: T) => void;
+    listener: (args: any) => void;
     options: A;
 }
 
@@ -92,12 +94,14 @@ const identity = (input: any[]) => input;
 
 export class Forminator<T extends object, A extends object = any> {
     public descriptor: InternalDescriptor<T, A>;
+    private _externalDescriptor: FormDescriptor<T, A>;
     private _listeners: FormListener[] = [];
 
     id: string;
 
     constructor(descriptor: FormDescriptor<T, A>) {
         this.id = `form-${Math.random() * (10000 - 100) + 100 << 0}`;
+        this._externalDescriptor = descriptor;
         this.initDescriptor(descriptor);
     }
 
@@ -111,11 +115,10 @@ export class Forminator<T extends object, A extends object = any> {
                 const [key, value] = entry;
                 const isDescriptorLike = typeof value === 'object' && value !== null && 'value' in value;
                 const valueAsDescriptor = value as FieldDescriptor<any, T>;
-                const isArray = Array.isArray(isDescriptorLike ? valueAsDescriptor.value : value);
 
                 const field: FieldDescriptor<any, T> = isDescriptorLike ?
-                    { ...defaultFieldDescriptor, ...valueAsDescriptor, value: isArray ? valueAsDescriptor.value.slice() : valueAsDescriptor.value } :
-                    { ...defaultFieldDescriptor, value: isArray ? value.slice() : value };
+                    { ...defaultFieldDescriptor, ...valueAsDescriptor, value: clone(valueAsDescriptor.value) } :
+                    { ...defaultFieldDescriptor, value: clone(value) };
 
                 return { [key]: field };
             })
@@ -160,6 +163,10 @@ export class Forminator<T extends object, A extends object = any> {
 
     get fields() {
         return Object.entries(this.descriptor.fields) as [keyof T, FieldDescriptor<unknown, T>][];
+    }
+
+    get fieldErrors() {
+        return this.fields.map(([key, field]) => field.error);
     }
 
     get error() {
@@ -259,9 +266,11 @@ export class Forminator<T extends object, A extends object = any> {
                 .reduce<T>((acc, curr) => ({ ...acc, ...curr }), {} as T);
 
             this.descriptor.onSubmit && this.descriptor.onSubmit(submitData, args);
+            this.informListeners(FormEvent.FIELD_ERRORS, null);
             return submitData;
         } catch (err) {
             this.descriptor.onError && this.descriptor.onError(err);
+            this.informListeners(FormEvent.FIELD_ERRORS, err)
         }
     }
 
@@ -360,5 +369,20 @@ export class Forminator<T extends object, A extends object = any> {
         };
 
         this._listeners.push(listener);
+    }
+
+    onFieldErrors(listenerFn: (errors: ValidationError[]) => void, options?: ErrorListenerOptions) {
+        const listener: FormListener<T> = {
+            event: FormEvent.FIELD_ERRORS,
+            listener: listenerFn,
+            options: options || {}
+        };
+
+        this._listeners.push(listener);
+    }
+
+    reset() {
+        this.initDescriptor(this._externalDescriptor);
+        this.fields.forEach(([name, field]) => this.informUpdate(name, field));
     }
 }

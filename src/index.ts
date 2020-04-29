@@ -3,6 +3,7 @@ export * from './forminator';
 export * from './hooks/use-form';
 export * from './hooks/use-form-error';
 export * from './hooks/use-field';
+export * from './hooks/use-field-errors';
 
 export * from './validation';
 
