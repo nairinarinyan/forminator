@@ -6,15 +6,15 @@ import { ValuePair } from '../hooks/use-field-states';
 
 type FieldCtx = {
     name: string;
-    value: string;
-    setValue: (value: string) => void;
+    value: any;
+    setValue: (value: any) => void;
     onBlur: (evt: FormEvent) => void;
     error?: ValidationError;
 };
 
 type CallableChildProps = {
     value: string,
-    setValue: (val: string) => void,
+    setValue: (val: any) => void,
     onBlur?: (evt: FormEvent) => void,
     error?: ValidationError
 }
@@ -36,7 +36,7 @@ export const Field: FunctionComponent<Props> = props => {
     const field = form.descriptor.fields[name];
 
     const childIsFunction = typeof children === 'function';
-    const valuePair = fieldStates[name] as ValuePair<string>;
+    const valuePair = fieldStates[name] as ValuePair<any>;
 
     if (!valuePair) {
         console.error(`${name} is not a valid field name`);
