@@ -13,7 +13,7 @@ type FieldCtx = {
 };
 
 type CallableChildProps = {
-    value: string,
+    value: any,
     setValue: (val: any) => void,
     onBlur?: (evt: FormEvent) => void,
     error?: ValidationError
@@ -55,7 +55,7 @@ export const Field: FunctionComponent<Props> = props => {
         });
     }, [name]);
 
-    const setValue = (value: string) => {
+    const setValue = (value: any) => {
         _setValue(value);
         form.setFieldValue(name, value);
     };
