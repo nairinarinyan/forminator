@@ -7,8 +7,8 @@ export const useForm = <T extends object, A extends object = any>(
     onError?: ErrorFn
 ): Forminator<T, A> => {
     const onSubmitRef = useRef<SubmitFn<T, A>>(onSubmit);
-    const [, updateState] = useState();
-    const forceUpdate = useCallback(() => updateState({}), []);
+    // const [, updateState] = useState();
+    // const forceUpdate = useCallback(() => updateState({}), []);
 
     useEffect(() => {
         onSubmitRef.current = onSubmit;
@@ -20,9 +20,9 @@ export const useForm = <T extends object, A extends object = any>(
         }, onError });
     }, [descriptor]);
 
-    useEffect(() => {
-        form.onFormError(forceUpdate);
-    }, [])
+    // useEffect(() => {
+    //     form.onFormError(forceUpdate);
+    // }, [])
 
     return form;
 };

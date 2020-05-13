@@ -1,15 +1,16 @@
-import { ValidationError } from '../validation';
 import { useState, useEffect } from 'react';
-import { Forminator } from '../forminator';
+import { Forminator, FormErrors } from '../forminator';
 
-export const useFormError = <T extends object>(form: Forminator<T>): ValidationError => {
-    const [error, setError] = useState<ValidationError>(form.error);
+export const useFormErrors = <T extends object, E extends object>(form: Forminator<T, any, E>): FormErrors<T, E> => {
+    const [errors, setErrors] = useState<FormErrors<T, E>>(form.formErrors);
 
     useEffect(() => {
-        form.onFormError(err => {
-            setError(err);
-        });
-    }, [])
+        setErrors(form.formErrors);
 
-    return error;
+        form.onFormError(err => {
+            setErrors(err);
+        });
+    }, [form])
+
+    return errors;
 };

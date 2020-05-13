@@ -12,7 +12,7 @@ export const useField = <K extends T[keyof T], T extends object>(
     useEffect(() => {
         form.onFieldUpdate(field, setValue, options);
         form.onFieldError(field, setError);
-    }, []);
+    }, [form]);
     
     return [value, error];
 };
