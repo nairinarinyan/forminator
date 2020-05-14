@@ -48,7 +48,7 @@ export const FieldArray: FunctionComponent<Props> = props => {
 
     useLayoutEffect(() => {
         form.onFieldUpdate(name, values => {
-            setValues(values);
+            setValues(values.slice());
         });
 
         form.onFieldError(name, error => {

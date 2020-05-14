@@ -88,7 +88,7 @@ const defaultFormDescriptor: InternalDescriptor<any, any, any> = {
     validate: {},
     validateOnSubmit: true,
     validateOnFieldsChange: [],
-    errors: {} 
+    errors: {}
 };
 
 const defaultFieldDescriptor: FieldDescriptor<string> = {
@@ -237,7 +237,6 @@ export class Forminator<T extends object, A extends object = any, E extends obje
 
         if (field.validateOnChange) {
             this.validateField(name, field as FieldDescriptor<unknown, T>, fields);
-            this.validateForm();
         }
 
         if (validateOnFieldsChange.includes(name)) {
@@ -246,6 +245,7 @@ export class Forminator<T extends object, A extends object = any, E extends obje
     }
 
     addFieldToArray(name: keyof T, value?: any) {
+        const { fields, validateOnFieldsChange } = this.descriptor;
         const field = this.descriptor.fields[name];
         const currentValue = (<unknown>field.value as any[]);
 
@@ -253,15 +253,32 @@ export class Forminator<T extends object, A extends object = any, E extends obje
         (<unknown>field.value as any[]) = currentValue.concat(valueToSet);
 
         this.informUpdate(name, field);
+
+        if (field.validateOnChange) {
+            this.validateField(name, field as FieldDescriptor<unknown, T>, fields);
+        }
+
+        if (validateOnFieldsChange.includes(name)) {
+            this.validateForm();
+        }
     }
 
     removeFieldFromArray(name: keyof T, idx: number) {
+        const { fields, validateOnFieldsChange } = this.descriptor;
         const field = this.descriptor.fields[name];
         const currentValue = (<unknown>field.value as any[]).slice();
         currentValue.splice(idx, 1);
 
         (<unknown>field.value as any[]) = currentValue;
         this.informUpdate(name, field);
+
+        if (field.validateOnChange) {
+            this.validateField(name, field as FieldDescriptor<unknown, T>, fields);
+        }
+
+        if (validateOnFieldsChange.includes(name)) {
+            this.validateForm();
+        }
     }
 
     setFieldValues(values: Partial<T>, merge?: boolean) {
@@ -373,8 +390,19 @@ export class Forminator<T extends object, A extends object = any, E extends obje
             })
             .reduce((acc, curr) => Object.assign(acc, curr), {} as FormErrors<T, E>);
 
-        this.descriptor.errors = errors;
-        this.informListeners(FormEvent.FORM_ERROR, errors);
+        const validateKeys = Object.keys(validate) as (keyof T | keyof E)[];
+
+        const otherErrors = (Object
+            .keys(this.descriptor.errors) as (keyof T | keyof E)[])
+            .reduce((acc, key) => {
+                if (!validateKeys.includes(key)) {
+                    acc[key] = this.descriptor.errors[key];
+                }
+                return acc;
+            }, {} as FormErrors<T, E>);
+
+        this.descriptor.errors = {...otherErrors, ...errors };
+        this.informListeners(FormEvent.FORM_ERROR, this.descriptor.errors);
 
         return errors;
     }
