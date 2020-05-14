@@ -62,6 +62,7 @@ export enum FormEvent {
     FIELD_UPDATE,
     FIELD_ERROR,
     FIELD_ERRORS,
+    FORM_UPDATE,
     FORM_ERROR,
     FORM_SUBMIT,
 }
@@ -170,6 +171,11 @@ export class Forminator<T extends object, A extends object = any, E extends obje
                 return (ignoreOnRender || !onRender) ? value : onRender(value);
             }
         );
+
+        this.informListeners<UpdateListenerOptions>(
+            FormEvent.FORM_UPDATE,
+            this.fieldValues,
+        );
     }
 
     private setFieldError(fieldName: keyof T, error: ValidationError) {
@@ -198,6 +204,14 @@ export class Forminator<T extends object, A extends object = any, E extends obje
 
     get fields() {
         return Object.entries(this.descriptor.fields) as [keyof T, FieldDescriptor<unknown, T>][];
+    }
+
+    get fieldValues() {
+        return this.fields
+            .map(([key, value]) => {
+                return { [key]: value.value};
+            })
+            .reduce<T>((acc, curr) => ({ ...acc, ...curr }), {} as T);
     }
 
     get formErrors() {
@@ -310,11 +324,7 @@ export class Forminator<T extends object, A extends object = any, E extends obje
                 throw new ValidationError('Invalid form', Object.values(errors));
             }
 
-            const submitData = this.fields
-                .map(([key, value]) => {
-                    return { [key]: value.value};
-                })
-                .reduce<T>((acc, curr) => ({ ...acc, ...curr }), {} as T);
+            const submitData = this.fieldValues;
 
             this.descriptor.onSubmit && this.descriptor.onSubmit(submitData, args);
             this.informListeners(FormEvent.FIELD_ERRORS, null);
@@ -425,6 +435,16 @@ export class Forminator<T extends object, A extends object = any, E extends obje
             fieldName: name,
             listener: listenerFn,
             options: options || {}
+        };
+
+        this._listeners.push(listener);
+    }
+
+    onFormUpdate(listenerFn: (values: T) => void) {
+        const listener: FormListener<T> = {
+            event: FormEvent.FORM_UPDATE,
+            listener: listenerFn,
+            options: {}
         };
 
         this._listeners.push(listener);
