@@ -9,12 +9,12 @@ export type SubmitFn<T, A extends object> = (values: T, args: A) => void;
 
 export type ErrorFn = (errors: ValidationError[]) => void;
 
-export type FormErrors<T extends object, E extends object> = {
-    [key in (keyof T | keyof E)]: ValidationError;
+export type FormErrors<T extends object, E extends object = {}> = {
+    [key in (keyof T | keyof E)]?: ValidationError;
 };
 
 export type FormValidators<T extends object, E extends object> = {
-    [key in (keyof T | keyof E)]: FormValidator<T> | FormValidator<T>[];
+    [key in keyof E]: FormValidator<T> | FormValidator<T>[];
 };
 
 type Descriptor<T extends object, A extends object, E extends Object> = {
@@ -31,7 +31,7 @@ type ExternalFieldsDescriptors<T extends object> = {
     [key in keyof T]: ExternalFieldDescriptor<T, T[key]>
 }
 
-export interface FormDescriptor<T extends object, A extends object = any, E extends object = any> extends Descriptor<T, A, E> {
+export interface FormDescriptor<T extends object, A extends object = any, E extends object = {}> extends Descriptor<T, A, E> {
     fields: ExternalFieldsDescriptors<T>;
     errors?: FormErrors<T, E>;
 }
@@ -40,7 +40,7 @@ export type FieldsDescriptors<T extends object> = {
     [key in keyof T]: FieldDescriptor<T[key], T>;
 }
 
-interface InternalDescriptor<T extends object, A extends object, E extends object> extends FormDescriptor<T, A, E> {
+interface InternalDescriptor<T extends object, A extends object, E extends object = {}> extends FormDescriptor<T, A, E> {
     fields: FieldsDescriptors<T>;
 }
 
@@ -81,7 +81,7 @@ export type FormListener<T = any, A extends (UpdateListenerOptions | ErrorListen
     options: A;
 }
 
-const defaultFormDescriptor: InternalDescriptor<any, any, any> = {
+const defaultFormDescriptor: InternalDescriptor<any, any, {}> = {
     fields: {},
     onError: console.error,
 
@@ -105,22 +105,22 @@ const defaultFieldDescriptor: FieldDescriptor<string> = {
 
 export class Forminator<T extends object, A extends object = any, E extends object = any> {
     public descriptor: InternalDescriptor<T, A, E>;
-    private _externalDescriptor: FormDescriptor<T, A>;
+    private _externalDescriptor: FormDescriptor<T, A, E>;
     private _listeners: FormListener[] = [];
 
     id: string;
 
-    constructor(descriptor: FormDescriptor<T, A>) {
+    constructor(descriptor: FormDescriptor<T, A, E>) {
         this.id = `form-${Math.random() * (10000 - 100) + 100 << 0}`;
         this._externalDescriptor = descriptor;
         this.initDescriptor(descriptor);
     }
 
-    private initDescriptor(descriptor: FormDescriptor<T, A>) {
+    private initDescriptor(descriptor: FormDescriptor<T, A, E>) {
         this.descriptor = this.normalizeFields(descriptor);
     }
 
-    private normalizeFields(descriptor: FormDescriptor<T, A>): InternalDescriptor<T, A, E> {
+    private normalizeFields(descriptor: FormDescriptor<T, A, E>): InternalDescriptor<T, A, E> {
         const normalizedFields = Object.entries<ExternalFieldDescriptor<T, any>>(descriptor.fields)
             .map(entry => {
                 const [key, value] = entry;
@@ -136,7 +136,7 @@ export class Forminator<T extends object, A extends object = any, E extends obje
             .reduce<FieldsDescriptors<T>>((acc, curr) => ({ ...acc, ...curr }), {} as FieldsDescriptors<T>);
 
         return {
-            ...defaultFormDescriptor,
+            ...(defaultFormDescriptor as InternalDescriptor<T, A, E>),
             ...descriptor,
             validateOnFieldsChange: descriptor.validateOnFieldsChange || defaultFormDescriptor.validateOnFieldsChange as (keyof T)[],
             fields: normalizedFields
