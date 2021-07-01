@@ -178,30 +178,6 @@ export class Forminator<T extends object, A extends object = any, E extends obje
         );
     }
 
-    private setFieldError(fieldName: keyof T, error: ValidationError) {
-        const { errors, fields } = this.descriptor;
-
-        if (fields[fieldName].error !== error) {
-            fields[fieldName].error = error;
-            this.informListeners(FormEvent.FIELD_ERROR, error, fieldName);
-        }
-
-        if (!error) {
-            if (!errors[fieldName]) return;
-            delete errors[fieldName];
-            this.informListeners(FormEvent.FORM_ERROR, { ...this.descriptor.errors });
-        } else {
-            const isSame = errors[fieldName] && (errors[fieldName].message === error.message);
-            errors[fieldName] = error;
-
-            if (isSame) {
-                this.informListeners(FormEvent.FORM_ERROR, this.descriptor.errors);
-            } else {
-                this.informListeners(FormEvent.FORM_ERROR, { ...this.descriptor.errors });
-            }
-        }
-    }
-
     get fields() {
         return Object.entries(this.descriptor.fields) as [keyof T, FieldDescriptor<unknown, T>][];
     }
@@ -255,6 +231,30 @@ export class Forminator<T extends object, A extends object = any, E extends obje
 
         if (validateOnFieldsChange.includes(name)) {
             this.validateForm();
+        }
+    }
+
+    setFieldError(fieldName: keyof T, error: ValidationError) {
+        const { errors, fields } = this.descriptor;
+
+        if (fields[fieldName].error !== error) {
+            fields[fieldName].error = error;
+            this.informListeners(FormEvent.FIELD_ERROR, error, fieldName);
+        }
+
+        if (!error) {
+            if (!errors[fieldName]) return;
+            delete errors[fieldName];
+            this.informListeners(FormEvent.FORM_ERROR, { ...this.descriptor.errors });
+        } else {
+            const isSame = errors[fieldName] && (errors[fieldName].message === error.message);
+            errors[fieldName] = error;
+
+            if (isSame) {
+                this.informListeners(FormEvent.FORM_ERROR, this.descriptor.errors);
+            } else {
+                this.informListeners(FormEvent.FORM_ERROR, { ...this.descriptor.errors });
+            }
         }
     }
 
