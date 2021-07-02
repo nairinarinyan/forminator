@@ -1,14 +1,17 @@
+import { useState, useEffect, useContext } from 'react';
 import { Forminator } from '../forminator';
-import { useState, useEffect } from 'react';
+import { FormContext } from '../components/form';
 
 export const useFormValues = <T extends object>(
-    form: Forminator<T>,
+    form?: Forminator<T>,
 ): T => {
-    const [values, setValues] = useState<T>(form.fieldValues);
+    const formFromContext = useContext(FormContext);
+    const frm = form || (formFromContext.form as Forminator<T>);
+    const [values, setValues] = useState<T>(frm.fieldValues);
 
     useEffect(() => {
-        form.onFormUpdate(setValues);
-    }, [form]);
+        frm.onFormUpdate(setValues);
+    }, [frm]);
     
     return values;
 };

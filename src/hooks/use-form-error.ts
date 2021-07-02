@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { FormContext } from '../components/form';
 import { Forminator, FormErrors } from '../forminator';
 
-export const useFormErrors = <T extends object, E extends object = {}>(form: Forminator<T, any, E>): FormErrors<T, E> => {
-    const [errors, setErrors] = useState<FormErrors<T, E>>(form.formErrors);
+export const useFormErrors = <T extends object, E extends object = {}>(form?: Forminator<T, any, E>): FormErrors<T, E> => {
+    const formFromContext = useContext(FormContext);
+    const frm = form || (formFromContext.form as Forminator<T>);
+    const [errors, setErrors] = useState<FormErrors<T, E>>(frm.formErrors);
 
     useEffect(() => {
-        setErrors(form.formErrors);
+        setErrors(frm.formErrors);
 
-        form.onFormError(err => {
+        frm.onFormError(err => {
             setErrors(err);
         });
-    }, [form])
+    }, [frm])
 
     return errors;
 };
