@@ -243,6 +243,7 @@ export class Forminator<T extends object, A extends object = any, E extends obje
         }
 
         if (!error) {
+            if (!errors[fieldName]) return;
             delete errors[fieldName];
             this.informListeners(FormEvent.FORM_ERROR, { ...this.descriptor.errors });
         } else {
