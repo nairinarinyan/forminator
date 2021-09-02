@@ -1,5 +1,5 @@
 import { Validator, ValidationError, FormValidator } from './validation';
-import { clone } from './helpers';
+import { clone, generateId } from './helpers';
 
 // T - type of descriptor fields
 // A - type of submit arguments
@@ -18,6 +18,7 @@ export type FormValidators<T extends object, E extends object> = {
 };
 
 type Descriptor<T extends object, A extends object, E extends Object> = {
+    id?: string;
     onSubmit?: SubmitFn<T, A>;
     onError?: ErrorFn;
     validate?: FormValidators<T, E>;
@@ -112,7 +113,7 @@ export class Forminator<T extends object, A extends object = any, E extends obje
     id: string;
 
     constructor(descriptor: FormDescriptor<T, A, E>) {
-        this.id = `form-${Math.random() * (10000 - 100) + 100 << 0}`;
+        this.id = descriptor.id || generateId();
         this._externalDescriptor = descriptor;
         this.initDescriptor(descriptor);
     }

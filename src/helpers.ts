@@ -33,4 +33,6 @@ const cloneObject = (obj: object): object => {
 
 const cloneDate = (d: Date) => {
     return new Date(d);
-}
+};
+
+export const generateId = () => Math.round(Math.random() * 1e10).toString(16);
