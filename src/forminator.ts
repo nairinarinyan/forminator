@@ -96,7 +96,7 @@ const defaultFieldDescriptor: FieldDescriptor<string> = {
     validate: () => true,
     validateOnBlur: true,
     validateOnSubmit: true,
-    validateOnChange: false,
+    validateOnChange: true,
 
     resetErrorOnChange: true,
     isFieldArray: false,

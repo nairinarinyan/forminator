@@ -1,6 +1,6 @@
 {
     "name": "react-forminator",
-    "version": "0.1.32",
+    "version": "0.2.0",
     "description": "Forminator - The only form library for React",
     "main": "index.js",
     "scripts": {
@@ -25,7 +25,7 @@
     },
     "homepage": "https://github.com/featurematrix/forminator.git",
     "peerDependencies": {
-        "react": "^16.13.1"
+        "react": "*"
     },
     "devDependencies": {
         "@types/react": "^16.9.35",
