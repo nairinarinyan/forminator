@@ -4,6 +4,7 @@ export * from './hooks/use-form';
 export * from './hooks/use-form-values';
 export * from './hooks/use-form-error';
 export * from './hooks/use-field';
+export * from './hooks/use-form-context';
 // export * from './hooks/use-field-errors';
 
 export * from './validation';
