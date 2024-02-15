@@ -1,9 +1,11 @@
-import React, { FunctionComponent, createContext, FormEvent, HtmlHTMLAttributes, FormHTMLAttributes } from 'react';
+import React, { FunctionComponent, createContext, FormEvent, ReactNode, FormHTMLAttributes } from 'react';
+
 import { Forminator } from '../forminator';
 import { FieldStates, useFieldStates } from '../hooks/use-field-states';
 
 type Props = FormHTMLAttributes<HTMLFormElement> & {
     form: Forminator<any, any>;
+		children: ReactNode;
 };
 
 interface FormContext<T extends object, A extends object> {

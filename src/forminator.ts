@@ -331,7 +331,7 @@ export class Forminator<T extends object, A extends object = any, E extends obje
             this.informListeners(FormEvent.FIELD_ERRORS, null);
             return submitData;
         } catch (err) {
-            this.descriptor.onError && this.descriptor.onError(err);
+            this.descriptor.onError && this.descriptor.onError(err as ValidationError[]);
             this.informListeners(FormEvent.FIELD_ERRORS, err)
         }
     }
